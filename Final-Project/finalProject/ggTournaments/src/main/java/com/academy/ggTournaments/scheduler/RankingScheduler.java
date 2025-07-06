@@ -23,45 +23,55 @@ public class RankingScheduler {
     private final MatchRepository matchRepository;
     private final PlayerRepository playerRepository;
 
-
-    @Scheduled(cron = "0 31 11 * * *")
+    @Scheduled(cron = "0 42 11 * * *")
     //@Scheduled(fixedRate = 60000)
     @Transactional
     public void updatePlayerRankings() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime since = now.minusDays(1);
 
+        logger.info("Starting ATP ranking update at {}", now);
         List<MatchEntity> matches = matchRepository.findByMatchDateBetween(since.toLocalDate(), now.toLocalDate());
+        logger.info("Found {} matches played between {} and {}", matches.size(), since.toLocalDate(), now.toLocalDate());
 
         for (MatchEntity match : matches) {
             Optional<PlayerEntity> optFirst = playerRepository.findById(match.getFirstPlayer().getId());
             Optional<PlayerEntity> optSecond = playerRepository.findById(match.getSecondPlayer().getId());
 
-            if (optFirst.isEmpty() || optSecond.isEmpty()) continue;
+            if (optFirst.isEmpty() || optSecond.isEmpty()) {
+                logger.warn("Missing player data for match ID {}. Skipping...", match.getId());
+                continue;
+            }
 
             PlayerEntity first = optFirst.get();
             PlayerEntity second = optSecond.get();
 
+            logger.info("Processing match ID {}: {} vs {}", match.getId(), first.getName(), second.getName());
+
             boolean firstWins = Math.random() < 0.5;
 
             if (firstWins) {
+                logger.info("{} wins against {}", first.getName(), second.getName());
                 adjustRanking(first, -1);
                 adjustRanking(second, +1);
             } else {
+                logger.info("{} wins against {}", second.getName(), first.getName());
                 adjustRanking(second, -1);
                 adjustRanking(first, +1);
             }
         }
 
-        logger.info("ATP ranking update performed at {}", now);
+        logger.info("ATP ranking update completed at {}", LocalDateTime.now());
     }
 
     private void adjustRanking(PlayerEntity player, int num) {
         int current = player.getRankingAtp();
         int updated = Math.max(1, current + num);
 
+        logger.debug("Adjusting ranking for {}: {} -> {}", player.getName(), current, updated);
+
         player.setRankingAtp(updated);
-        //player.setLastUpdate(LocalDateTime.now());
         playerRepository.save(player);
     }
 }
+

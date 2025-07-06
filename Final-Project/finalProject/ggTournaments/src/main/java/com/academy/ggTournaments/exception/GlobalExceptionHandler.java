@@ -31,25 +31,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, status);
     }
 
+    // --- GG EXCEPTION ---
     @ExceptionHandler(GGException.class)
     public ResponseEntity<Object> handleGGException(GGException ex, WebRequest request) {
-        logger.error("GG EXCEPTION: {}", ex.getMessage());
+        logger.error("GG EXCEPTION: {}", ex.getMessage(), ex);
         return buildResponse(ex.getStatus(), ex, request);
     }
-
-
 
     // --- NOT FOUND ---
     @ExceptionHandler({ResourceNotFoundException.class})
     public ResponseEntity<Object> handleNotFoundExceptions(RuntimeException ex, WebRequest request) {
-        logger.error("NOT FOUND: {}", ex.getMessage());
+        logger.error("NOT FOUND: {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.NOT_FOUND, ex, request);
     }
 
     // --- CONFLICT ---
     @ExceptionHandler({InvalidMatchException.class})
     public ResponseEntity<Object> handleConflictExceptions(RuntimeException ex, WebRequest request) {
-        logger.error("CONFLICT: {}", ex.getMessage());
+        logger.error("CONFLICT: {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.CONFLICT, ex, request);
     }
 

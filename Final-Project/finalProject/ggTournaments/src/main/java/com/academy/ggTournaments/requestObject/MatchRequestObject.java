@@ -21,8 +21,8 @@ import java.time.LocalDateTime;
 @Builder
 @ToString
 public class MatchRequestObject {
-    private int tournamentId;
-    private int firstPlayerId;
-    private int secondPlayerId;
+    private Integer tournamentId;
+    private Integer firstPlayerId;
+    private Integer secondPlayerId;
     private LocalDate matchDate;
 }

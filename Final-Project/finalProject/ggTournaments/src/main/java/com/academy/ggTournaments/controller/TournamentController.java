@@ -4,8 +4,11 @@ import com.academy.ggTournaments.dto.TournamentDTO;
 import com.academy.ggTournaments.requestObject.TournamentRequestObject;
 import com.academy.ggTournaments.service.TournamentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -15,9 +18,14 @@ public class TournamentController {
 
     private final TournamentService tournamentService;
 
-    @PostMapping
-    public TournamentDTO createTournament(@RequestBody TournamentRequestObject t) {
-        return tournamentService.createTournament(t);
+    @PostMapping("/add")
+    public ResponseEntity<TournamentDTO> createTournament(@RequestBody TournamentRequestObject t) {
+        TournamentDTO dto = tournamentService.createTournament(t);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(dto.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(dto);
     }
 
     @PutMapping("/{id}")
@@ -36,7 +44,9 @@ public class TournamentController {
     }
 
     @GetMapping("/search")
-    public List<TournamentDTO> searchByLocation(@RequestParam String location) {
-        return tournamentService.searchByLocation(location);
+    public List<TournamentDTO> searchTournaments(
+            @RequestParam(required = false, defaultValue = "") String location
+    ) {
+        return tournamentService.searchTournaments(location);
     }
 }

@@ -4,8 +4,11 @@ import com.academy.ggTournaments.dto.PlayerDTO;
 import com.academy.ggTournaments.requestObject.PlayerRequestObject;
 import com.academy.ggTournaments.service.PlayerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -15,14 +18,20 @@ public class PlayerController {
 
     private final PlayerService playerService;
 
-    @PostMapping("/add{ranking}")
-    public PlayerDTO createPlayer(@PathVariable int ranking, @RequestBody PlayerRequestObject p) {
-        return playerService.createPlayer(ranking, p);
+    @PostMapping("/add")
+    public ResponseEntity<PlayerDTO> createPlayer(@RequestBody PlayerRequestObject p) {
+        PlayerDTO dto = playerService.createPlayer(p);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(dto.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(dto);
     }
 
-    @PutMapping("/{id}/{ranking}")
-    public PlayerDTO updatePlayer(@PathVariable int id, @PathVariable int ranking, @RequestBody PlayerRequestObject p) {
-        return playerService.updatePlayer(id, ranking, p);
+
+    @PutMapping("/{id}")
+    public PlayerDTO updatePlayer(@PathVariable int id, @RequestBody PlayerRequestObject p) {
+        return playerService.updatePlayer(id, p);
     }
 
     @DeleteMapping("/{id}")
@@ -32,17 +41,16 @@ public class PlayerController {
 
     @GetMapping("/{id}")
     public PlayerDTO getPlayer(@PathVariable int id) {
-        return playerService.getPlayer(id);
+        return playerService.getPlayerById(id);
     }
 
     @GetMapping("/search")
-    public List<PlayerDTO> searchPlayers(@RequestParam String nameOrSurname) {
-        return playerService.searchPlayers(nameOrSurname);
-    }
-
-    @GetMapping("/sponsor")
-    public List<PlayerDTO> searchBySponsor(@RequestParam String sponsor) {
-        return playerService.searchBySponsor(sponsor);
+    public List<PlayerDTO> searchPlayers(
+            @RequestParam(required = false, defaultValue = "") String name,
+            @RequestParam(required = false, defaultValue = "") String surname,
+            @RequestParam(required = false, defaultValue = "") String sponsor
+    ) {
+        return playerService.searchPlayers(name, surname, sponsor);
     }
 
     @GetMapping("/ranking")

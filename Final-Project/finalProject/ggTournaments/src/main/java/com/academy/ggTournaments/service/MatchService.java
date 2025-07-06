@@ -10,6 +10,6 @@ public interface MatchService {
     MatchDTO createMatch(MatchRequestObject m);
     MatchDTO updateMatch(int id, MatchRequestObject m);
     void deleteMatch(int id);
-    List<MatchDTO> getMatchesByTournament(int tournamentId);
-    List<MatchDTO> getMatchesByDateRange(LocalDate from, LocalDate to);
+    MatchDTO getMatchById(int id);
+    List<MatchDTO> searchMatches(Integer tournamentId, LocalDate from, LocalDate to);
 }

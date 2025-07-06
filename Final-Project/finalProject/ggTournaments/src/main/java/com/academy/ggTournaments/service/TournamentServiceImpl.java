@@ -11,6 +11,7 @@ import com.academy.ggTournaments.requestObject.TournamentRequestObject;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +22,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TournamentServiceImpl implements TournamentService {
 
+    @Autowired
     private final TournamentRepository tournamentRepository;
+
+    @Autowired
     private final MatchRepository matchRepository;
+
+    @Autowired
     private final TournamentMapper tournamentMapper;
+
+    @Autowired
     private static final Logger logger = LoggerFactory.getLogger(TournamentServiceImpl.class);
 
     @Override
@@ -37,16 +45,25 @@ public class TournamentServiceImpl implements TournamentService {
     @Override
     public TournamentDTO updateTournament(int id, TournamentRequestObject t) {
         logger.info("Updating tournament with ID: {}", id);
-        if (!tournamentRepository.existsById(id)) {
-            logger.warn("Tournament with ID {} not found for update", id);
-            throw new ResourceNotFoundException("Tournament", id);
+
+        TournamentEntity existing = tournamentRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Tournament with ID {} not found for update", id);
+                    return new ResourceNotFoundException("Tournament", id);
+                });
+
+        if (t.getName() != null) {
+            existing.setName(t.getName());
         }
-        TournamentEntity updated = tournamentMapper.requestToEntity(t);
-        updated.setId(id);
-        TournamentEntity saved = tournamentRepository.save(updated);
+        if (t.getLocation() != null) {
+            existing.setLocation(t.getLocation());
+        }
+
+        TournamentEntity saved = tournamentRepository.save(existing);
         logger.info("Tournament with ID {} updated successfully", id);
         return tournamentMapper.toDto(saved);
     }
+
 
     @Override
     public void deleteTournament(int id) {
@@ -78,10 +95,20 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public List<TournamentDTO> searchByLocation(String location) {
+    public List<TournamentDTO> searchTournaments(String location) {
         logger.info("Searching tournaments by location containing: '{}'", location);
+
+        if (location == null || location.isBlank()) {
+            logger.info("Location filter is empty, returning all tournaments");
+            List<TournamentEntity> all = tournamentRepository.findAll();
+            return all.stream().map(tournamentMapper::toDto).collect(Collectors.toList());
+        }
+
         List<TournamentEntity> list = tournamentRepository.findByLocationIgnoreCaseContaining(location);
+
         logger.info("Found {} tournaments matching location '{}'", list.size(), location);
+
+        logger.debug("Tournaments found after filtering: {}", list.size());
         return list.stream().map(tournamentMapper::toDto).collect(Collectors.toList());
     }
 }

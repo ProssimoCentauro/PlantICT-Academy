@@ -1,13 +1,15 @@
 package com.academy.ggTournaments.dto;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class PlayerDTO extends BaseDTO {
     private Integer id;
     private String name;

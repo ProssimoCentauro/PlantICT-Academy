@@ -15,7 +15,10 @@ public interface MatchMapper {
    /* @Mapping(source = "tournament.id", target = "tournamentId")
     @Mapping(source = "firstPlayer.id", target = "firstPlayerId")
     @Mapping(source = "secondPlayer.id", target = "secondPlayerId")*/
-    MatchDTO toDto(MatchEntity entity);
+   @Mapping(target = "insertDate", source = "insertDate")
+   @Mapping(target = "lastUpdateDate", source = "lastUpdateDate")
+   @Mapping(target = "operator", source = "operator")
+   MatchDTO toDto(MatchEntity entity);
 
    /* @Mapping(source = "tournamentId", target = "tournament.id")
     @Mapping(source = "firstPlayerId", target = "firstPlayer.id")

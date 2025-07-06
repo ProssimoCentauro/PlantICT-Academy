@@ -22,5 +22,6 @@ public class PlayerRequestObject {
     private String surname;
     private String sponsor;
     private LocalDate birthdate;
+    private Integer rankingAtp;
 }
 

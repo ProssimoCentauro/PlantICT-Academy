@@ -12,6 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,15 +26,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlayerServiceImpl implements PlayerService {
 
+    @Autowired
     private final PlayerRepository repository;
+
+    @Autowired
     private final MatchRepository matchRepository;
+
+    @Autowired
     private final PlayerMapper mapper;
+
+    @Autowired
     private static final Logger logger = LoggerFactory.getLogger(PlayerServiceImpl.class);
-/*
-    public PlayerServiceImpl(PlayerRepository repository, PlayerMapper mapper) {
-        this.repository = repository;
-        this.mapper = mapper;
-    }*/
 
     private int checkRanking(int ranking) {
         if (ranking < 1) {
@@ -57,7 +60,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public PlayerDTO createPlayer(int ranking, PlayerRequestObject p) {
+    public PlayerDTO createPlayer(PlayerRequestObject p) {
         LocalDate birthdate = p.getBirthdate();
         LocalDate today = LocalDate.now();
 
@@ -66,7 +69,7 @@ public class PlayerServiceImpl implements PlayerService {
             logger.warn("Player under 18 attempted to register: {} years old", age.getYears());
             throw new GGException("Player must be at least 18 years old.", HttpStatus.BAD_REQUEST);
         }
-        ranking = checkRanking(ranking);
+        int ranking = checkRanking(p.getRankingAtp());
 
         PlayerEntity entity = mapper.requestToEntity(p);
         entity.setRankingAtp(ranking);
@@ -76,7 +79,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public PlayerDTO updatePlayer(int id, int ranking, PlayerRequestObject p) {
+    public PlayerDTO updatePlayer(int id, PlayerRequestObject p) {
 
         PlayerEntity existing = repository.findById(id)
                 .orElseThrow(() -> {
@@ -87,10 +90,22 @@ public class PlayerServiceImpl implements PlayerService {
         if(p.getBirthdate() != null){
             birthdate = p.getBirthdate();
         }
-       /* String sponsor = existing.getSponsor();
+        String name = existing.getName();
+        if (p.getName() != null) {
+            name = p.getName();
+        }
+        String surname = existing.getSurname();
+        if (p.getSurname() != null) {
+            surname = p.getSurname();
+        }
+        String sponsor = existing.getSponsor();
         if (p.getSponsor() != null) {
             sponsor = p.getSponsor();
-        }*/
+        }
+        int ranking = existing.getRankingAtp();
+        if (p.getRankingAtp() != null) {
+            ranking = checkRanking(p.getRankingAtp());
+        }
 
         LocalDate today = LocalDate.now();
 
@@ -100,13 +115,10 @@ public class PlayerServiceImpl implements PlayerService {
             throw new GGException("Player must be at least 18 years old.", HttpStatus.BAD_REQUEST);
         }
 
-        ranking = checkRanking(ranking);
-
-
-        existing.setName(p.getName());
-        existing.setSurname(p.getSurname());
-        existing.setSponsor(p.getSponsor());
-        existing.setBirthdate(p.getBirthdate());
+        existing.setName(name);
+        existing.setSurname(surname);
+        existing.setSponsor(sponsor);
+        existing.setBirthdate(birthdate);
         existing.setRankingAtp(ranking);
 
         PlayerEntity updated = repository.save(existing);
@@ -132,7 +144,7 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public PlayerDTO getPlayer(int id) {
+    public PlayerDTO getPlayerById(int id) {
         return repository.findById(id)
                 .map(player -> {
                     logger.info("Retrieved player with ID {}", id);
@@ -145,17 +157,34 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public List<PlayerDTO> searchPlayers(String nameOrSurname) {
-        logger.info("Searching players with name or surname containing '{}'", nameOrSurname);
-        List<PlayerEntity> list = repository.findByNameIgnoreCaseContainingOrSurnameIgnoreCaseContaining(nameOrSurname, nameOrSurname);
+    public List<PlayerDTO> searchPlayers(String name, String surname, String sponsor) {
+        boolean isNameEmpty = name == null || name.isBlank();
+        boolean isSurnameEmpty = surname == null || surname.isBlank();
+        boolean isSponsorEmpty = sponsor == null || sponsor.isBlank();
+
+        logger.info("Searching players with filters - Name: '{}', Surname: '{}', Sponsor: '{}'", name, surname, sponsor);
+
+        List<PlayerEntity> list = repository.findAll().stream()
+                .filter(player -> {
+                    boolean matches = true;
+                    if (!isNameEmpty) {
+                        matches = matches && player.getName().toLowerCase().contains(name.toLowerCase());
+                    }
+                    if (!isSurnameEmpty) {
+                        matches = matches && player.getSurname().toLowerCase().contains(surname.toLowerCase());
+                    }
+                    if (!isSponsorEmpty) {
+                        matches = matches && player.getSponsor().equalsIgnoreCase(sponsor);
+                    }
+                    return matches;
+                })
+                .toList();
+
+        logger.debug("Players found after filtering: {}", list.size());
         return list.stream().map(mapper::toDto).collect(Collectors.toList());
     }
 
-    @Override
-    public List<PlayerDTO> searchBySponsor(String sponsor) {
-        logger.info("Searching players with sponsor '{}'", sponsor);
-        return repository.findBySponsorIgnoreCase(sponsor).stream().map(mapper::toDto).collect(Collectors.toList());
-    }
+
 
     @Override
     public List<PlayerDTO> getRanking() {

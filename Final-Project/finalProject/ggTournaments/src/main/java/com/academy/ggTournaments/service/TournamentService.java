@@ -10,5 +10,5 @@ public interface TournamentService {
     TournamentDTO updateTournament(int id, TournamentRequestObject t);
     void deleteTournament(int id);
     TournamentDTO getTournamentById(int id);
-    List<TournamentDTO> searchByLocation(String location);
-}
+    List<TournamentDTO> searchTournaments(String location);
+    }

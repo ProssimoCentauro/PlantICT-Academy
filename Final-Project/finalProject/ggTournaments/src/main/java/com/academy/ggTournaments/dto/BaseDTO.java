@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class BaseDTO {
+public abstract class BaseDTO {
     private LocalDateTime insertDate;
     private LocalDateTime lastUpdateDate;
     private String operator = "system";
